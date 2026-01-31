@@ -10,26 +10,26 @@
 }
 
 # -------------------------------
-# Canonical redirects (optional)
+# Canonical redirects
 # -------------------------------
+
+# Main site: www -> apex
 www.wisdomchurchhq.org {
 	redir https://wisdomchurchhq.org{uri} permanent
 }
 
+# Admin site: www -> apex (CORRECT for your Namecheap domain)
 www.admin-portalwisdomchurch.org {
 	redir https://admin-portalwisdomchurch.org{uri} permanent
 }
 
 # -------------------------------
-# Main Website
+# Main Website (CANONICAL)
 # -------------------------------
 wisdomchurchhq.org {
 	encode zstd gzip
 
-	# Security headers (sane defaults)
 	header {
-		# HSTS: enable includeSubDomains only if ALL subdomains support HTTPS.
-		# Enable preload only when you're fully confident and ready to submit.
 		Strict-Transport-Security "max-age=31536000"
 		X-Frame-Options "DENY"
 		X-Content-Type-Options "nosniff"
@@ -37,9 +37,7 @@ wisdomchurchhq.org {
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
 	}
 
-	# Reverse proxy to frontend container
-	reverse_proxy frontend:3000 {
-		# preserve client info
+	reverse_proxy wisdom_frontend:2000 {
 		header_up X-Real-IP {remote_host}
 		header_up X-Forwarded-For {remote_host}
 		header_up X-Forwarded-Proto {scheme}
@@ -47,7 +45,7 @@ wisdomchurchhq.org {
 }
 
 # -------------------------------
-# Admin Portal
+# Admin Portal (CANONICAL)
 # -------------------------------
 admin-portalwisdomchurch.org {
 	encode zstd gzip
@@ -60,7 +58,7 @@ admin-portalwisdomchurch.org {
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
 	}
 
-	reverse_proxy admin:3000 {
+	reverse_proxy wisdom_admin:3000 {
 		header_up X-Real-IP {remote_host}
 		header_up X-Forwarded-For {remote_host}
 		header_up X-Forwarded-Proto {scheme}
@@ -68,24 +66,21 @@ admin-portalwisdomchurch.org {
 }
 
 # -------------------------------
-# API (recommended on subdomain)
+# API (subdomain of wisdomchurchhq.org)
 # -------------------------------
 api.wisdomchurchhq.org {
 	encode zstd gzip
 
-	# API-specific headers
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "no-referrer"
 	}
 
-	# Optional: basic rate limiting (Caddy 2 doesn't include it by default without plugins)
-	# Keep rate limiting at app level or via CDN/WAF if needed.
-
-	reverse_proxy api:2000 {
+	reverse_proxy wisdom_api:8080 {
 		header_up X-Real-IP {remote_host}
 		header_up X-Forwarded-For {remote_host}
 		header_up X-Forwarded-Proto {scheme}
 	}
 }
+
