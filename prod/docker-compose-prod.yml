@@ -6,6 +6,8 @@ networks:
 volumes:
   caddy_data:
   caddy_config:
+  postgres_data:
+  redis_data:
 
 services:
   caddy:
@@ -13,7 +15,7 @@ services:
     container_name: wisdom_caddy
     restart: unless-stopped
     env_file:
-      - ../.env.prod
+      - .env.prod
     ports:
       - "80:80"
       - "443:443"
@@ -29,13 +31,42 @@ services:
       - admin
       - api
 
+  postgres:
+    image: postgres:15-alpine
+    container_name: wisdom_postgres
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_DBNAME:-wisdom_church_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-postgres} -d ${DATABASE_DBNAME:-wisdom_church_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: wisdom_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
 
   frontend:
     image: ghcr.io/thewisdomchurch/wisdom-frontend:${FRONTEND_TAG:?FRONTEND_TAG is required}
     container_name: wisdom_frontend
     restart: unless-stopped
     env_file:
-      - ../.env.prod
+      - .env.prod
     environment:
       NODE_ENV: production
       PORT: "${FRONTEND_PORT:-2000}"
@@ -50,7 +81,7 @@ services:
     container_name: wisdom_admin
     restart: unless-stopped
     env_file:
-      - ../.env.prod
+      - .env.prod
     environment:
       NODE_ENV: production
       PORT: "${ADMIN_PORT:-3000}"
@@ -65,7 +96,7 @@ services:
     container_name: wisdom_api
     restart: unless-stopped
     env_file:
-      - ../.env.prod
+      - .env.prod
     environment:
       ENV: production
       PORT: "${API_PORT:-8080}"
@@ -73,4 +104,9 @@ services:
       - "${API_PORT:-8080}"
     networks:
       - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
