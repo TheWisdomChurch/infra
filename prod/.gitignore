@@ -1,0 +1,6 @@
+# Editor backups
+*.save
+*.swp
+*.swo
+*.bak
+*.orig
