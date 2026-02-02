@@ -71,36 +71,36 @@ services:
       - internal
 
   api:
-    image: ghcr.io/thewisdomchurch/wisdom-api:${API_TAG:?API_TAG is required}
-    container_name: wisdom_api
-    restart: unless-stopped
-    env_file:
-      - .env.prod
-    environment:
-      ENV: production
-      PORT: "${API_PORT:-8080}"
-      # Ensure API uses pooler DSN for runtime
-      DATABASE_URL: "${DATABASE_URL:?DATABASE_URL is required}"
-    expose:
-      - "${API_PORT:-8080}"
-    networks:
-      - internal
-    depends_on:
-      redis:
-        condition: service_started
+  image: ghcr.io/thewisdomchurch/wisdom-api:${API_TAG:?API_TAG is required}
+  container_name: wisdom_api
+  restart: unless-stopped
+  env_file:
+    - .env.prod
+  environment:
+    ENVIRONMENT: "production"
+    PORT: "${API_PORT:-8080}"
+    # runtime uses pooler DSN
+    DATABASE_URL: "${DATABASE_URL:?DATABASE_URL is required}"
+  command: ["/root/wisdom-house"]
+  expose:
+    - "${API_PORT:-8080}"
+  networks:
+    - internal
+  depends_on:
+    redis:
+      condition: service_started
 
   migrate:
-    image: ghcr.io/thewisdomchurch/wisdom-api:${API_TAG:?API_TAG is required}
-    container_name: wisdom_migrate
-    env_file:
-      - .env.prod
-    environment:
-      # Ensure migrations use direct DSN
-      DATABASE_URL: "${MIGRATIONS_DATABASE_URL:?MIGRATIONS_DATABASE_URL is required}"
-      ENV: migration
-    networks:
-      - internal
-    restart: "no"
-    # This MUST run a migration command and exit (see section 3)
-    command: ["./migrate"]
+  image: ghcr.io/thewisdomchurch/wisdom-api:${API_TAG:?API_TAG is required}
+  container_name: wisdom_migrate
+  env_file:
+    - .env.prod
+  environment:
+    ENVIRONMENT: "production"
+    RUN_AUTOMIGRATE: "true"
+    DATABASE_URL: "${MIGRATIONS_DATABASE_URL:?MIGRATIONS_DATABASE_URL is required}"
+  command: ["/root/wisdom-house"]
+  networks:
+    - internal
+  restart: "no"
 
