@@ -71,16 +71,46 @@ admin-portalwisdomchurch.org {
 api.wisdomchurchhq.org {
 	encode zstd gzip
 
+	# Security headers
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "no-referrer"
 	}
 
-	reverse_proxy wisdom_api:8080 {
-		header_up X-Real-IP {remote_host}
-		header_up X-Forwarded-For {remote_host}
-		header_up X-Forwarded-Proto {scheme}
+	route {
+		# Preflight for allowed origins
+		@preflight {
+			method OPTIONS
+			header Origin https://admin-portalwisdomchurch.org https://wisdomchurchhq.org https://www.wisdomchurchhq.org
+		}
+
+		handle @preflight {
+			header Access-Control-Allow-Origin "{http.request.header.Origin}"
+			header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+			header Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With"
+			header Access-Control-Allow-Credentials "true"
+			header Access-Control-Max-Age "86400"
+			header Vary "Origin"
+			respond "" 204
+		}
+
+		# Actual requests: only apply CORS when origin matches allowed list
+		@allowed_origin header Origin https://admin-portalwisdomchurch.org https://wisdomchurchhq.org https://www.wisdomchurchhq.org
+
+		handle {
+			header @allowed_origin {
+				Access-Control-Allow-Origin "{http.request.header.Origin}"
+				Access-Control-Allow-Credentials "true"
+				Vary "Origin"
+			}
+
+			reverse_proxy wisdom_api:8080 {
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-Proto {scheme}
+			}
+		}
 	}
 }
 
