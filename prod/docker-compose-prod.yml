@@ -1,7 +1,6 @@
 networks:
   edge:
   internal:
-    internal: true
 
 volumes:
   caddy_data:
