@@ -7,7 +7,6 @@ volumes:
   caddy_data:
   caddy_config:
   redis_data:
-  # postgres_data:   # <-- not needed if using Supabase
 
 services:
   caddy:
@@ -30,27 +29,6 @@ services:
       - frontend
       - admin
       - api
-
-  # ✅ SUPABASE MODE: local postgres disabled
-  # postgres:
-  #   image: postgres:15-alpine
-  #   container_name: wisdom_postgres
-  #   restart: unless-stopped
-  #   env_file:
-  #     - .env.prod
-  #   environment:
-  #     POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
-  #     POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
-  #     POSTGRES_DB: ${DATABASE_DBNAME:-wisdom_church_db}
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   networks:
-  #     - internal
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-postgres} -d ${DATABASE_DBNAME:-wisdom_church_db}"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 10
 
   redis:
     image: redis:7-alpine
@@ -92,9 +70,7 @@ services:
     networks:
       - internal
 
-
-
-    api:
+  api:
     image: ghcr.io/thewisdomchurch/wisdom-api:${API_TAG:?API_TAG is required}
     container_name: wisdom_api
     restart: unless-stopped
@@ -103,19 +79,28 @@ services:
     environment:
       ENV: production
       PORT: "${API_PORT:-8080}"
+      # Ensure API uses pooler DSN for runtime
+      DATABASE_URL: "${DATABASE_URL:?DATABASE_URL is required}"
     expose:
       - "${API_PORT:-8080}"
     networks:
       - internal
-    dns:
-      - 67.207.67.2
-      - 1.1.1.1
-      - 8.8.8.8
-    dns_opt:
-      - use-vc
-      - timeout:2
-      - attempts:3
     depends_on:
       redis:
         condition: service_started
+
+  migrate:
+    image: ghcr.io/thewisdomchurch/wisdom-api:${API_TAG:?API_TAG is required}
+    container_name: wisdom_migrate
+    env_file:
+      - .env.prod
+    environment:
+      # Ensure migrations use direct DSN
+      DATABASE_URL: "${MIGRATIONS_DATABASE_URL:?MIGRATIONS_DATABASE_URL is required}"
+      ENV: migration
+    networks:
+      - internal
+    restart: "no"
+    # This MUST run a migration command and exit (see section 3)
+    command: ["./migrate"]
 
