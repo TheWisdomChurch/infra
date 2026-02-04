@@ -1,5 +1,44 @@
 {
+	# Global options
 	email admin@wisdomchurchhq.org
+
+	# Enable HTTP/3 too (QUIC)
+	servers {
+		protocols h1 h2 h3
+	}
+
+	# (Optional) If you're behind a cloud LB/proxy and need real client IPs,
+	# we can add trusted_proxies later. Leaving out for safety.
+}
+
+# -------------------------------
+# Common snippets
+# -------------------------------
+
+(common_security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	}
+}
+
+(common_logging) {
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 25MiB
+			roll_keep 10
+			roll_keep_for 168h
+		}
+		format json
+		level INFO
+	}
+}
+
+(common_encoding) {
+	encode zstd gzip
 }
 
 # -------------------------------
@@ -9,57 +48,96 @@ www.wisdomchurchhq.org {
 	redir https://wisdomchurchhq.org{uri} permanent
 }
 
-www.admin-portalwisdomchurch.org {
-	redir https://admin-portalwisdomchurch.org{uri} permanent
-}
+# Only add these when DNS records exist:
+# www.admin.wisdomchurchhq.org
+# www.api.wisdomchurchhq.org
+
 
 # -------------------------------
-# Main Website
+# Main Website (Next.js)
 # -------------------------------
 wisdomchurchhq.org {
-	encode zstd gzip
+	import common_logging
+	import common_encoding
+	import common_security_headers
 
-	header {
-		Strict-Transport-Security "max-age=31536000"
-		X-Frame-Options "DENY"
-		X-Content-Type-Options "nosniff"
-		Referrer-Policy "strict-origin-when-cross-origin"
-		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	# Basic liveness route directly at proxy
+	@health path /caddy-health
+	respond @health 200
+
+	# Reverse proxy to frontend
+	reverse_proxy wisdom_frontend:2000 {
+		# Caddy already forwards Host and X-Forwarded-* correctly by default.
+		# Only keep X-Real-IP if you want it explicitly:
+		header_up X-Real-IP {remote_host}
+
+		# Use supported proxy timeouts
+		transport http {
+			dial_timeout 10s
+		}
+
+		# Timeouts that are VALID in reverse_proxy
+		# (These prevent 502s on slow endpoints without breaking streaming)
+		flush_interval -1
 	}
-
-	reverse_proxy wisdom_frontend:2000
 }
 
 # -------------------------------
-# Admin Portal
+# Admin Portal (Next.js)
 # -------------------------------
-admin-portalwisdomchurch.org {
-	encode zstd gzip
+admin.wisdomchurchhq.org {
+	import common_logging
+	import common_encoding
+	import common_security_headers
 
-	header {
-		Strict-Transport-Security "max-age=31536000"
-		X-Frame-Options "DENY"
-		X-Content-Type-Options "nosniff"
-		Referrer-Policy "strict-origin-when-cross-origin"
-		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	@health path /caddy-health
+	respond @health 200
+
+	reverse_proxy wisdom_admin:3000 {
+		header_up X-Real-IP {remote_host}
+
+		transport http {
+			dial_timeout 10s
+		}
+
+		flush_interval -1
 	}
-
-	reverse_proxy wisdom_admin:3000
 }
 
 # -------------------------------
-# API with explicit CORS handlers
-# (no header matchers used)
+# API (Gin)
 # -------------------------------
 api.wisdomchurchhq.org {
-	encode zstd gzip
+	import common_logging
+	import common_encoding
 
+	# Keep API headers lean (DO NOT add Access-Control-* here)
 	header {
-		Strict-Transport-Security "max-age=31536000"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "no-referrer"
 	}
 
-	reverse_proxy wisdom_api:8080
+	@health path /caddy-health
+	respond @health 200
+
+	# API reverse proxy
+	reverse_proxy wisdom_api:8080 {
+		header_up X-Real-IP {remote_host}
+
+		transport http {
+			dial_timeout 10s
+		}
+
+		# These are the correct place for timeouts in Caddyfile:
+		# (Caddy handles upstream keepalives internally)
+		# We avoid invalid transport subdirectives that crash Caddy.
+		flush_interval -1
+	}
+
+	# Friendly errors
+	handle_errors {
+		respond "{http.error.status_code} upstream error" {http.error.status_code}
+	}
 }
 
