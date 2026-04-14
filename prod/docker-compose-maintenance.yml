@@ -1,0 +1,54 @@
+services:
+  frontend:
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+
+      - traefik.http.routers.wisdom-frontend-maint.rule=Host(`${FRONTEND_DOMAIN}`) || Host(`www.${FRONTEND_DOMAIN}`)
+      - traefik.http.routers.wisdom-frontend-maint.entrypoints=websecure
+      - traefik.http.routers.wisdom-frontend-maint.tls=true
+      - traefik.http.routers.wisdom-frontend-maint.tls.certresolver=letsencrypt
+      - traefik.http.routers.wisdom-frontend-maint.priority=1000
+      - traefik.http.routers.wisdom-frontend-maint.service=error-service@docker
+
+      - traefik.http.routers.wisdom-frontend-maint-http.rule=Host(`${FRONTEND_DOMAIN}`) || Host(`www.${FRONTEND_DOMAIN}`)
+      - traefik.http.routers.wisdom-frontend-maint-http.entrypoints=web
+      - traefik.http.routers.wisdom-frontend-maint-http.priority=1000
+      - traefik.http.routers.wisdom-frontend-maint-http.middlewares=redirect-to-https@docker
+      - traefik.http.routers.wisdom-frontend-maint-http.service=error-service@docker
+
+  admin:
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+
+      - traefik.http.routers.wisdom-admin-maint.rule=Host(`${ADMIN_DOMAIN}`)
+      - traefik.http.routers.wisdom-admin-maint.entrypoints=websecure
+      - traefik.http.routers.wisdom-admin-maint.tls=true
+      - traefik.http.routers.wisdom-admin-maint.tls.certresolver=letsencrypt
+      - traefik.http.routers.wisdom-admin-maint.priority=1000
+      - traefik.http.routers.wisdom-admin-maint.service=error-service@docker
+
+      - traefik.http.routers.wisdom-admin-maint-http.rule=Host(`${ADMIN_DOMAIN}`)
+      - traefik.http.routers.wisdom-admin-maint-http.entrypoints=web
+      - traefik.http.routers.wisdom-admin-maint-http.priority=1000
+      - traefik.http.routers.wisdom-admin-maint-http.middlewares=redirect-to-https@docker
+      - traefik.http.routers.wisdom-admin-maint-http.service=error-service@docker
+
+  api:
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+
+      - traefik.http.routers.wisdom-api-maint.rule=Host(`${API_DOMAIN}`)
+      - traefik.http.routers.wisdom-api-maint.entrypoints=websecure
+      - traefik.http.routers.wisdom-api-maint.tls=true
+      - traefik.http.routers.wisdom-api-maint.tls.certresolver=letsencrypt
+      - traefik.http.routers.wisdom-api-maint.priority=1000
+      - traefik.http.routers.wisdom-api-maint.service=error-service@docker
+
+      - traefik.http.routers.wisdom-api-maint-http.rule=Host(`${API_DOMAIN}`)
+      - traefik.http.routers.wisdom-api-maint-http.entrypoints=web
+      - traefik.http.routers.wisdom-api-maint-http.priority=1000
+      - traefik.http.routers.wisdom-api-maint-http.middlewares=redirect-to-https@docker
+      - traefik.http.routers.wisdom-api-maint-http.service=error-service@docker
