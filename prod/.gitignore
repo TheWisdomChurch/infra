@@ -1,0 +1,13 @@
+# Environment files (secrets)
+.env
+.env.*
+.env.prod
+!.env.example   # optional template
+
+# Docker volumes / local data
+data/
+volumes/
+
+# IDE
+.vscode/
+.idea/
