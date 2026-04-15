@@ -58,12 +58,12 @@ services:
       - traefik.http.routers.wisdom-frontend.entrypoints=websecure
       - traefik.http.routers.wisdom-frontend.tls=true
       - traefik.http.routers.wisdom-frontend.tls.certresolver=letsencrypt
-      - traefik.http.routers.wisdom-frontend.middlewares=maintenance-errors@docker
+      - traefik.http.routers.wisdom-frontend.middlewares=maintenance-errors@file
       - traefik.http.routers.wisdom-frontend.service=wisdom-frontend
 
       - traefik.http.routers.wisdom-frontend-http.rule=Host(`${FRONTEND_DOMAIN:?FRONTEND_DOMAIN is required}`) || Host(`www.${FRONTEND_DOMAIN:?FRONTEND_DOMAIN is required}`)
       - traefik.http.routers.wisdom-frontend-http.entrypoints=web
-      - traefik.http.routers.wisdom-frontend-http.middlewares=redirect-to-https@docker
+      - traefik.http.routers.wisdom-frontend-http.middlewares=redirect-to-https@file
 
       - traefik.http.services.wisdom-frontend.loadbalancer.server.port=${FRONTEND_PORT:-2000}
       - traefik.http.services.wisdom-frontend.loadbalancer.passhostheader=true
@@ -100,12 +100,12 @@ services:
       - traefik.http.routers.wisdom-admin.entrypoints=websecure
       - traefik.http.routers.wisdom-admin.tls=true
       - traefik.http.routers.wisdom-admin.tls.certresolver=letsencrypt
-      - traefik.http.routers.wisdom-admin.middlewares=maintenance-errors@docker
+      - traefik.http.routers.wisdom-admin.middlewares=maintenance-errors@file
       - traefik.http.routers.wisdom-admin.service=wisdom-admin
 
       - traefik.http.routers.wisdom-admin-http.rule=Host(`${ADMIN_DOMAIN:?ADMIN_DOMAIN is required}`)
       - traefik.http.routers.wisdom-admin-http.entrypoints=web
-      - traefik.http.routers.wisdom-admin-http.middlewares=redirect-to-https@docker
+      - traefik.http.routers.wisdom-admin-http.middlewares=redirect-to-https@file
 
       - traefik.http.services.wisdom-admin.loadbalancer.server.port=${ADMIN_PORT:-3000}
       - traefik.http.services.wisdom-admin.loadbalancer.passhostheader=true
@@ -141,12 +141,12 @@ services:
       - traefik.http.routers.wisdom-api.entrypoints=websecure
       - traefik.http.routers.wisdom-api.tls=true
       - traefik.http.routers.wisdom-api.tls.certresolver=letsencrypt
-      - traefik.http.routers.wisdom-api.middlewares=maintenance-errors@docker
+      - traefik.http.routers.wisdom-api.middlewares=maintenance-errors@file
       - traefik.http.routers.wisdom-api.service=wisdom-api
 
       - traefik.http.routers.wisdom-api-http.rule=Host(`${API_DOMAIN:?API_DOMAIN is required}`)
       - traefik.http.routers.wisdom-api-http.entrypoints=web
-      - traefik.http.routers.wisdom-api-http.middlewares=redirect-to-https@docker
+      - traefik.http.routers.wisdom-api-http.middlewares=redirect-to-https@file
 
       - traefik.http.services.wisdom-api.loadbalancer.server.port=${API_PORT:-8080}
       - traefik.http.services.wisdom-api.loadbalancer.passhostheader=true
