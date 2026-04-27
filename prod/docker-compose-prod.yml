@@ -167,7 +167,16 @@ services:
       ENVIRONMENT: production
       RUN_AUTOMIGRATE: "true"
       DATABASE_URL: "${MIGRATIONS_DATABASE_URL:?MIGRATIONS_DATABASE_URL is required}"
-    command: ["/root/wisdom-house"]
+    command:
+      - sh
+      - -lc
+      - |
+        echo "Checking migration file..."
+        ls -la /root/migrations || true
+        test -f /root/migrations/schema.up.sql
+        echo "Running database migration..."
+        psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f /root/migrations/schema.up.sql
+        echo "Migration completed."
     networks:
       - internal
     depends_on:
