@@ -14,13 +14,23 @@ services:
     image: redis:7-alpine
     container_name: wisdom_redis
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
+    command:
+      - sh
+      - -lc
+      - |
+        exec redis-server \
+          --requirepass "$${REDIS_PASSWORD}" \
+          --appendonly yes \
+          --maxmemory 256mb \
+          --maxmemory-policy allkeys-lru
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     volumes:
       - redis_data:/data
     networks:
       - internal
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$${REDIS_PASSWORD}\" redis-cli ping | grep PONG"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -44,6 +54,8 @@ services:
       NEXT_TELEMETRY_DISABLED: "1"
     expose:
       - "${FRONTEND_PORT:-2000}"
+    tmpfs:
+      - /app/.next/cache:rw,mode=1777
     networks:
       - internal
       - traefik-public
@@ -86,6 +98,8 @@ services:
       NEXT_TELEMETRY_DISABLED: "1"
     expose:
       - "${ADMIN_PORT:-3000}"
+    tmpfs:
+      - /app/.next/cache:rw,mode=1777
     networks:
       - internal
       - traefik-public
@@ -122,8 +136,25 @@ services:
       - .env.prod
     environment:
       ENVIRONMENT: production
+      GIN_MODE: release
       PORT: "${API_PORT:-8080}"
       DATABASE_URL: "${DATABASE_URL:?DATABASE_URL is required}"
+
+      # Redis must match the redis service password above.
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"
+      REDIS_DB: "${REDIS_DB:-0}"
+      REDIS_URL: "redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/${REDIS_DB:-0}"
+
+      # Needed so API/rate limiter can understand Docker + Traefik proxy traffic.
+      TRUSTED_PROXIES: "172.16.0.0/12,10.0.0.0/8,192.168.0.0/16,127.0.0.1"
+
+      # Safer dashboard limits. Your admin loads many endpoints at once.
+      RATE_LIMIT_GLOBAL_RPM: "${RATE_LIMIT_GLOBAL_RPM:-1000}"
+      RATE_LIMIT_GLOBAL_BURST: "${RATE_LIMIT_GLOBAL_BURST:-300}"
+      RATE_LIMIT_GLOBAL_WINDOW: "${RATE_LIMIT_GLOBAL_WINDOW:-1m}"
+      RATE_LIMIT_AUTH_RPM: "${RATE_LIMIT_AUTH_RPM:-60}"
+      RATE_LIMIT_AUTH_BURST: "${RATE_LIMIT_AUTH_BURST:-20}"
+      RATE_LIMIT_AUTH_WINDOW: "${RATE_LIMIT_AUTH_WINDOW:-1m}"
     command: ["/root/wisdom-house"]
     expose:
       - "${API_PORT:-8080}"
@@ -165,8 +196,12 @@ services:
       - .env.prod
     environment:
       ENVIRONMENT: production
+      GIN_MODE: release
       RUN_AUTOMIGRATE: "true"
       DATABASE_URL: "${MIGRATIONS_DATABASE_URL:?MIGRATIONS_DATABASE_URL is required}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"
+      REDIS_DB: "${REDIS_DB:-0}"
+      REDIS_URL: "redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/${REDIS_DB:-0}"
     command:
       - sh
       - -lc
