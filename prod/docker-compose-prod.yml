@@ -50,6 +50,12 @@ services:
       NODE_ENV: production
       HOSTNAME: 0.0.0.0
       PORT: "${FRONTEND_PORT:-2000}"
+
+      # Critical for server-side API proxy calls from Next.js.
+      API_INTERNAL_URL: "http://api:${API_PORT:-8080}"
+      BACKEND_INTERNAL_URL: "http://api:${API_PORT:-8080}"
+
+      # Public browser-facing API URL.
       NEXT_PUBLIC_API_BASE_URL: "https://${API_DOMAIN:?API_DOMAIN is required}"
       NEXT_TELEMETRY_DISABLED: "1"
     expose:
@@ -94,6 +100,12 @@ services:
       NODE_ENV: production
       HOSTNAME: 0.0.0.0
       PORT: "${ADMIN_PORT:-3000}"
+
+      # Critical fix: admin Next.js proxy must call the backend over Docker network.
+      API_INTERNAL_URL: "http://api:${API_PORT:-8080}"
+      BACKEND_INTERNAL_URL: "http://api:${API_PORT:-8080}"
+
+      # Public browser-facing API URL.
       NEXT_PUBLIC_API_BASE_URL: "https://${API_DOMAIN:?API_DOMAIN is required}"
       NEXT_TELEMETRY_DISABLED: "1"
     expose:
@@ -140,15 +152,12 @@ services:
       PORT: "${API_PORT:-8080}"
       DATABASE_URL: "${DATABASE_URL:?DATABASE_URL is required}"
 
-      # Redis must match the redis service password above.
       REDIS_PASSWORD: "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"
       REDIS_DB: "${REDIS_DB:-0}"
       REDIS_URL: "redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/${REDIS_DB:-0}"
 
-      # Needed so API/rate limiter can understand Docker + Traefik proxy traffic.
       TRUSTED_PROXIES: "172.16.0.0/12,10.0.0.0/8,192.168.0.0/16,127.0.0.1"
 
-      # Safer dashboard limits. Your admin loads many endpoints at once.
       RATE_LIMIT_GLOBAL_RPM: "${RATE_LIMIT_GLOBAL_RPM:-1000}"
       RATE_LIMIT_GLOBAL_BURST: "${RATE_LIMIT_GLOBAL_BURST:-300}"
       RATE_LIMIT_GLOBAL_WINDOW: "${RATE_LIMIT_GLOBAL_WINDOW:-1m}"
@@ -209,8 +218,13 @@ services:
         echo "Checking migration file..."
         ls -la /root/migrations || true
         test -f /root/migrations/schema.up.sql
+
+        echo "Preparing migration database URL..."
+        DB_URL="$(printf "%s" "$DATABASE_URL" \
+          | sed -E 's/[?&]prefer_simple_protocol=true//g; s/\?&/?/g; s/[?&]$//g')"
+
         echo "Running database migration..."
-        psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f /root/migrations/schema.up.sql
+        psql "$DB_URL" -v ON_ERROR_STOP=1 -f /root/migrations/schema.up.sql
         echo "Migration completed."
     networks:
       - internal
