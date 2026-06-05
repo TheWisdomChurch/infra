@@ -1,13 +1,25 @@
-# Environment files (secrets)
+# Environment variables (SECRETS!)
 .env
-.env.*
 .env.prod
-!.env.example   # optional template
+.env.local
+.env.*.local
 
-# Docker volumes / local data
-data/
-volumes/
+# Docker volumes
+redis_data/
+
+# OS
+.DS_Store
+Thumbs.db
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.env.backup
+
+# Temporary files
+*.tmp
+*.log
+.cache/
