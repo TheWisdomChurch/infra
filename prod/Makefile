@@ -37,10 +37,15 @@ start: setup
 	@echo "Starting services..."
 	@$(COMPOSE) pull --quiet
 	@$(COMPOSE) up -d
-	@sleep 3
+	@sleep 5
 	@make status
 	@echo ""
-	@echo "✓ Services started! Check logs with: make logs"
+	@echo "✓ Services started!"
+	@echo ""
+	@echo "⚠ Note: If migration failed (check 'make logs migrate'), run:"
+	@echo "  make migrate-retry"
+	@echo ""
+	@echo "Monitor startup with: make logs"
 
 stop:
 	@echo "Stopping services..."
@@ -89,3 +94,21 @@ validate:
 
 version:
 	@docker compose --version
+
+migrate-status:
+	@echo "Migration Status:"
+	@$(COMPOSE) ps migrate
+
+migrate-logs:
+	@$(COMPOSE) logs migrate
+
+migrate-retry:
+	@echo "Retrying database migration..."
+	@$(COMPOSE) restart migrate
+	@sleep 5
+	@$(COMPOSE) logs migrate
+
+migrate-manual:
+	@echo "Running manual migration..."
+	@chmod +x migrate.sh
+	@./migrate.sh
