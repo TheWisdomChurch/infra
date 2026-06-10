@@ -139,9 +139,6 @@ services:
       traefik.http.routers.wisdom-api.service: wisdom-api
       traefik.http.services.wisdom-api.loadbalancer.server.port: "${API_PORT:-8080}"
       traefik.http.services.wisdom-api.loadbalancer.passhostheader: "true"
-      traefik.http.services.wisdom-api.loadbalancer.healthcheck.path: /health
-      traefik.http.services.wisdom-api.loadbalancer.healthcheck.interval: 15s
-      traefik.http.services.wisdom-api.loadbalancer.healthcheck.timeout: 5s
 
   frontend:
     <<: *base
