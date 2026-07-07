@@ -1,27 +1,65 @@
+# Overlay file — always used together with docker-compose-prod.yml:
+#   docker compose -f docker-compose-prod.yml -f docker-compose-maintenance.yml up -d maintenance
+#
+# Brings up a small, self-contained nginx container that serves a branded
+# 503 "under maintenance" page. Its Traefik routers are registered at a
+# higher priority than the normal frontend/admin/api routers, so as long as
+# this container is running it wins the routing decision for all three
+# domains — regardless of whether frontend/api/admin are healthy, starting,
+# or stopped entirely. See prod/scripts/maintenance.sh to toggle it.
 services:
-  frontend:
+  maintenance:
+    image: nginx:1.27-alpine
+    container_name: wisdom_maintenance
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    volumes:
+      - ./maintenance/html:/usr/share/nginx/html:ro
+      - ./maintenance/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - traefik-public
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+        reservations:
+          memory: 16M
     labels:
-      traefik.http.routers.wisdom-frontend-maint.rule: "Host(`${FRONTEND_DOMAIN}`) || Host(`www.${FRONTEND_DOMAIN}`)"
+      traefik.enable: "true"
+      traefik.docker.network: traefik-public
+
+      # Single backend shared by all three maintenance routers below.
+      traefik.http.services.wisdom-maintenance.loadbalancer.server.port: "80"
+
+      traefik.http.routers.wisdom-frontend-maint.rule: "Host(`${FRONTEND_DOMAIN:?FRONTEND_DOMAIN is required}`) || Host(`www.${FRONTEND_DOMAIN:?FRONTEND_DOMAIN is required}`)"
       traefik.http.routers.wisdom-frontend-maint.entrypoints: websecure
       traefik.http.routers.wisdom-frontend-maint.tls: "true"
       traefik.http.routers.wisdom-frontend-maint.tls.certresolver: letsencrypt
       traefik.http.routers.wisdom-frontend-maint.priority: "1000"
-      traefik.http.routers.wisdom-frontend-maint.service: error-service@docker
+      traefik.http.routers.wisdom-frontend-maint.service: wisdom-maintenance
 
-  admin:
-    labels:
-      traefik.http.routers.wisdom-admin-maint.rule: "Host(`${ADMIN_DOMAIN}`)"
+      traefik.http.routers.wisdom-admin-maint.rule: "Host(`${ADMIN_DOMAIN:?ADMIN_DOMAIN is required}`)"
       traefik.http.routers.wisdom-admin-maint.entrypoints: websecure
       traefik.http.routers.wisdom-admin-maint.tls: "true"
       traefik.http.routers.wisdom-admin-maint.tls.certresolver: letsencrypt
       traefik.http.routers.wisdom-admin-maint.priority: "1000"
-      traefik.http.routers.wisdom-admin-maint.service: error-service@docker
+      traefik.http.routers.wisdom-admin-maint.service: wisdom-maintenance
 
-  api:
-    labels:
-      traefik.http.routers.wisdom-api-maint.rule: "Host(`${API_DOMAIN}`)"
+      traefik.http.routers.wisdom-api-maint.rule: "Host(`${API_DOMAIN:?API_DOMAIN is required}`)"
       traefik.http.routers.wisdom-api-maint.entrypoints: websecure
       traefik.http.routers.wisdom-api-maint.tls: "true"
       traefik.http.routers.wisdom-api-maint.tls.certresolver: letsencrypt
       traefik.http.routers.wisdom-api-maint.priority: "1000"
-      traefik.http.routers.wisdom-api-maint.service: error-service@docker
+      traefik.http.routers.wisdom-api-maint.service: wisdom-maintenance

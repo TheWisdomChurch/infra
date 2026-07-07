@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="60">
+<title>Wisdom Church — Down for Maintenance</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg-start: #0f172a;
+    --bg-end: #1e1b4b;
+    --card-bg: rgba(255, 255, 255, 0.06);
+    --card-border: rgba(255, 255, 255, 0.12);
+    --text-primary: #f8fafc;
+    --text-muted: #a5b4cb;
+    --accent: #d4af37;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(circle at top, var(--bg-end), var(--bg-start));
+    color: var(--text-primary);
+  }
+  .card {
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    padding: 48px 36px;
+    border-radius: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(6px);
+  }
+  .icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  .icon svg { width: 30px; height: 30px; stroke: var(--accent); }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.08); opacity: 0.75; }
+  }
+  h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 12px;
+    letter-spacing: 0.3px;
+  }
+  p {
+    margin: 0 0 8px;
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .brand {
+    margin-top: 32px;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .dots::after {
+    content: "";
+    display: inline-block;
+    width: 1em;
+    text-align: left;
+    animation: dots 1.4s steps(4, end) infinite;
+  }
+  @keyframes dots {
+    0% { content: ""; }
+    25% { content: "."; }
+    50% { content: ".."; }
+    75%, 100% { content: "..."; }
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg-start: #eef1f8;
+      --bg-end: #dfe4f3;
+      --card-bg: rgba(255, 255, 255, 0.7);
+      --card-border: rgba(15, 23, 42, 0.08);
+      --text-primary: #0f172a;
+      --text-muted: #475569;
+      --accent: #b8860b;
+    }
+    .card { box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08); }
+  }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 7v5l3 3"></path>
+      </svg>
+    </div>
+    <h1>We'll be right back</h1>
+    <p>Wisdom Church is currently undergoing scheduled maintenance.</p>
+    <p class="dots">This page will refresh automatically</p>
+    <div class="brand">Wisdom Church</div>
+  </main>
+</body>
+</html>
