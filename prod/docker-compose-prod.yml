@@ -69,20 +69,8 @@ services:
       ENVIRONMENT: production
       GIN_MODE: release
       DATABASE_URL: "${MIGRATIONS_DATABASE_URL:?MIGRATIONS_DATABASE_URL is required}"
-    entrypoint: ["/bin/sh","-lc"]
-    command:
-      - |
-        set -eu
-        echo "[migrate] checking schema file..."
-        test -f /root/migrations/schema.up.sql
-
-        echo "[migrate] sanitizing DSN..."
-        DB_URL="$(printf '%s' "$DATABASE_URL" \
-          | sed -E 's/[?&]prefer_simple_protocol=true//g; s/\?&/?/g; s/[?&]$//g')"
-
-        echo "[migrate] applying schema..."
-        psql "$DB_URL" -v ON_ERROR_STOP=1 -f /root/migrations/schema.up.sql
-        echo "[migrate] done."
+    entrypoint: ["/app/wisdom-house"]
+    command: ["migrate"]
     networks:
       - internal
 

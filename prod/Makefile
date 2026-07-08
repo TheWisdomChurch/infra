@@ -95,7 +95,7 @@ clean: ## Remove dangling images left behind by old deploys (no volumes, no syst
 
 maintenance-on: ## Show the maintenance page now
 	@echo "==> Enabling maintenance page"
-	$(MAINT) up -d maintenance
+	$(MAINT) up -d --force-recreate maintenance
 
 maintenance-off: ## Restore normal routing
 	@echo "==> Disabling maintenance page"
