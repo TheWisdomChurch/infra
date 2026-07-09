@@ -76,7 +76,7 @@ wait-healthy: ## Block until api, frontend, admin all report healthy (or time ou
 			echo "==> Maintenance page stays up. Check: make logs"; \
 			exit 1; \
 		fi; \
-		sleep $(HEALTH_INTERVAL); elapsed=$$((elapsed + HEALTH_INTERVAL)); \
+		sleep $(HEALTH_INTERVAL); elapsed=$$((elapsed + $(HEALTH_INTERVAL))); \
 		echo "==> still waiting... ($${elapsed}s) api=$$api frontend=$$frontend admin=$$admin"; \
 	done
 
