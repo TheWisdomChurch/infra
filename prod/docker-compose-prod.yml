@@ -98,6 +98,8 @@ services:
       RATE_LIMIT_AUTH_WINDOW: "${RATE_LIMIT_AUTH_WINDOW:-1m}"
     expose:
       - "${API_PORT:-8080}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - internal
       - traefik-public
